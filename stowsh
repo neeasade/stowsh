@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
+if uname | grep -q MINGW; then
+    WINDOWS=true
+else
+    WINDOWS=false
+fi
+
 _runcommands() {
+
     if [[ $DRYRUN == 1 ]] || [[ $VERBOSE -gt 1 ]]; then
         echo "$@"
     fi
@@ -72,7 +79,14 @@ stowsh_install() {
         local relative
         relative=$($rpcmd "$f" --relative-to="$thisdir" --canonicalize-missing)
         if [[ ! -f "$targetf" ]] ; then
-            commands+=("ln -s '$relative' '$targetf'")
+            if $WINDOWS; then
+                # on a machine that prompts everytime, 
+                # this would get really old really fast.
+                # future you: just give up and copy in that case.
+                commands+=("sudo ln '$relative' '$targetf'")
+            else
+                commands+=("ln -s '$relative' '$targetf'")
+            fi
         else
             echoerr "$targetf already exists."
             if [[ ! $SKIP -eq 1 ]]; then
